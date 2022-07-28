@@ -50,18 +50,21 @@ warnings.filterwarnings("ignore", category=UserWarning)
 from datasource import get_img_generator
 from LPR import single_LPR
 from utils import cv2PutChineseText
-from producer_cloud import writeBack
+# from producer_cloud import writeBack
 
 logger = logging.getLogger('main')
 
 
 def main():
     generator = get_img_generator(args.channel, args.video, args.frame_dir)
-    for idx, img, filename in enumerate(generator):
+    for idx, (img, filename) in enumerate(generator):
         t1 = time.perf_counter()
         plate = single_LPR(img)
-        writeBack(plate, False, (0, 0, img.shape[1], img.shape[0]), 'disorder_queue', filename, args.channel)
-        frame = draw_frame(img, plate)
+        # if plate:
+        #     writeBack(plate, False, (0, 0, img.shape[1], img.shape[0]), 'disorder_queue', [filename, filename],
+        #               args.channel, 'str2')
+        if args.show or args.save:
+            frame = draw_frame(img, plate)
         if args.show:
             cv2.imshow('Test', frame)
             cv2.waitKey(1)
@@ -73,7 +76,8 @@ def main():
 
 def draw_frame(img, plate):
     frame = img.copy()
-    frame = cv2PutChineseText(frame, plate, (50, 50), (255, 0, 0), 50)  # 左上角绘制车牌
+    if plate:
+        frame = cv2PutChineseText(frame, plate, (50, 50), (255, 0, 0), 50)  # 左上角绘制车牌
     return frame
 
 
