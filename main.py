@@ -53,25 +53,31 @@ from utils import cv2PutChineseText
 # from producer_cloud import writeBack
 
 logger = logging.getLogger('main')
+PLATE_CYCLE = 25 * 30  # 30秒
+plate_store = [''] * PLATE_CYCLE
 
 
 def main():
     generator = get_img_generator(args.channel, args.video, args.frame_dir)
-    for idx, (img, filename) in enumerate(generator):
+    idx = 0
+    for img, filename in generator:
         t1 = time.perf_counter()
         plate = single_LPR(img)
-        # if plate:
-        #     writeBack(plate, False, (0, 0, img.shape[1], img.shape[0]), 'disorder_queue', [filename, filename],
-        #               args.channel, 'str2')
+        if plate and plate not in plate_store:
+            pass
+            # writeBack(plate, False, (0, 0, img.shape[1], img.shape[0]), 'disorder_queue', [filename, filename],
+            #               args.channel, 'str2')
+        plate_store[idx % PLATE_CYCLE] = plate if plate else ''
         if args.show or args.save:
             frame = draw_frame(img, plate)
-        if args.show:
-            cv2.imshow('Test', frame)
-            cv2.waitKey(1)
-        if args.save:
-            cv2.imwrite(os.path.join(out_dir, '%07d.jpg' % idx), frame)
+            if args.show:
+                cv2.imshow('Test', frame)
+                cv2.waitKey(1)
+            if args.save:
+                cv2.imwrite(os.path.join(out_dir, '%07d.jpg' % idx), frame)
         t2 = time.perf_counter()
         logger.debug(f'Time cost per frame: {t2 - t1} s ({1 / (t2 - t1)} FPS)')
+        idx = (idx + 1) % PLATE_CYCLE
 
 
 def draw_frame(img, plate):
